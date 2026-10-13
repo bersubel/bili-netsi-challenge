@@ -121,10 +121,9 @@ export default function Admin() {
     }
   };
 
-  // UPDATED: Now sets state to open the custom modal instead of a new tab
-  const viewReceipt = async (filePath: string) => {
-    const { data } = await supabase.storage.from('receipts').createSignedUrl(filePath, 60);
-    if (data) setReceiptModalUrl(data.signedUrl);
+  // FIXED: No longer uses Supabase storage, just grabs the direct URL link
+  const viewReceipt = (url: string) => {
+    setReceiptModalUrl(url);
   };
 
   const formatDisplayDate = (dateString: string) => {
@@ -481,7 +480,7 @@ export default function Admin() {
                 
                 {selectedUser.payment_screenshot_url && (
                   <button onClick={() => viewReceipt(selectedUser.payment_screenshot_url!)} className="w-full bg-white border-2 border-gray-200 text-black font-black py-3 rounded-xl hover:border-black transition-all shadow-sm mb-4">
-                    View Receipt Photo <span className="text-[10px] text-gray-400 ml-1">(ፎቶውን እይ)</span>
+                    View Receipt Link <span className="text-[10px] text-gray-400 ml-1">(ሊንኩን እይ)</span>
                   </button>
                 )}
                 
@@ -567,8 +566,12 @@ export default function Admin() {
               </button>
             </div>
 
-            {/* Modal Body (Scrollable Image Container) */}
-            <div className="flex-1 overflow-auto p-4 sm:p-8 flex justify-center items-center bg-gray-50 rounded-b-3xl">
+            {/* Modal Body (Scrollable Image Container with Fallback Link) */}
+            <div className="flex-1 overflow-auto p-4 sm:p-8 flex flex-col justify-center items-center bg-gray-50 rounded-b-3xl gap-4">
+              <a href={receiptModalUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-blue-600 underline bg-blue-50 px-4 py-2 rounded-lg border border-blue-100 text-center">
+                Link not showing as an image? Click here to open it directly<br/>
+                <span className="text-[10px] font-medium opacity-80">(ሊንኩን ለመክፈት እዚህ ይጫኑ)</span>
+              </a>
               <img src={receiptModalUrl} alt="Bank Receipt" className="max-w-full h-auto max-h-full object-contain rounded-xl shadow-sm border border-gray-200" />
             </div>
 

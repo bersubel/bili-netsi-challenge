@@ -20,7 +20,7 @@ export default function Onboarding() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptUrl, setReceiptUrl] = useState<string>('');
   const [formData, setFormData] = useState({
     age: '',
     height: '',
@@ -44,8 +44,8 @@ export default function Onboarding() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    if (!receiptFile) {
-      setError("Please upload your payment screenshot. (የክፍያ ማረጋገጫ ያስገቡ)");
+    if (!receiptUrl) {
+      setError("Please provide your payment screenshot URL. (የክፍያ ማረጋገጫ ሊንክ ያስገቡ)");
       return;
     }
 
@@ -53,25 +53,18 @@ export default function Onboarding() {
     setError(null);
 
     try {
-      // 1. Upload receipt
-      const fileExt = receiptFile.name.split('.').pop();
-      const filePath = `${user.id}-${Math.random()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage.from('receipts').upload(filePath, receiptFile);
-      if (uploadError) throw uploadError;
-
-      // 2. Update profile with receipt
-      const { error: profileError } = await supabase.from('profiles').update({ payment_screenshot_url: filePath }).eq('id', user.id);
+      // 1. Update profile with receipt URL directly (No storage upload needed)
+      const { error: profileError } = await supabase.from('profiles').update({ payment_screenshot_url: receiptUrl }).eq('id', user.id);
       if (profileError) throw profileError;
 
-      // 3. Process Health Conditions (Merge "Other" text if selected)
+      // 2. Process Health Conditions (Merge "Other" text if selected)
       let finalConditions = [...formData.selectedConditions];
       if (finalConditions.includes('Other') && formData.otherConditionText) {
         finalConditions = finalConditions.filter(c => c !== 'Other');
         finalConditions.push(`Other: ${formData.otherConditionText}`);
       }
 
-      // 4. Insert Assessment
+      // 3. Insert Assessment
       const { error: assessmentError } = await supabase.from('assessments').insert([{
         user_id: user.id,
         age: parseInt(formData.age),
@@ -130,15 +123,27 @@ export default function Onboarding() {
             </div>
 
             <div>
-              <label className="block text-sm font-black text-black mb-1">Upload Receipt *</label>
-              <label className="block text-xs font-bold text-gray-400 mb-3">የክፍያ ማረጋገጫ ፎቶ ያስገቡ</label>
+              <label className="block text-sm font-black text-black mb-1">Payment Receipt URL *</label>
+              <label className="block text-xs font-bold text-gray-400 mb-3">የክፍያ ማረጋገጫ ሊንክ ያስገቡ</label>
               <input
-                type="file"
-                accept="image/*"
+                type="url"
                 required
-                onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-black file:bg-black file:text-white hover:file:bg-gray-800 cursor-pointer border border-gray-200 rounded-xl bg-gray-50"
+                placeholder="https://prnt.sc/your-receipt"
+                onChange={(e) => setReceiptUrl(e.target.value)}
+                className="appearance-none relative block w-full px-4 py-3.5 bg-gray-50 border border-gray-200 placeholder-gray-400 text-black rounded-xl focus:outline-none focus:ring-2 focus:ring-red-700 focus:bg-white font-bold transition-all"
               />
+              <div className="mt-3 bg-blue-50 border-l-4 border-blue-600 p-4 rounded-r-lg shadow-sm">
+                <p className="text-xs text-blue-900 font-bold leading-relaxed mb-3">
+                  1. Go to <a href="https://prnt.sc/" target="_blank" rel="noopener noreferrer" className="text-blue-700 underline hover:text-blue-500">prnt.sc</a> and upload your receipt photo.<br/>
+                  2. Copy the URL they give you.<br/>
+                  3. Paste that link into the box above.
+                </p>
+                <p className="text-[10px] text-blue-800 font-bold leading-relaxed border-t border-blue-200 pt-3">
+                  1. ወደ <a href="https://prnt.sc/" target="_blank" rel="noopener noreferrer" className="text-blue-700 underline hover:text-blue-500">prnt.sc</a> በመሄድ የክፍያ ማረጋገጫ ፎቶዎን ይጫኑ።<br/>
+                  2. የሚሰጥዎትን ሊንክ ኮፒ (Copy) ያድርጉ።<br/>
+                  3. ኮፒ ያደረጉትን ሊንክ ከላይ ባለው ሳጥን ውስጥ ያስገቡ (Paste ያድርጉ)።
+                </p>
+              </div>
             </div>
           </section>
 
