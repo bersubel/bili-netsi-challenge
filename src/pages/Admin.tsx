@@ -50,7 +50,7 @@ export default function Admin() {
       .select('*')
       .not('payment_screenshot_url', 'is', null); 
 
-    const { data: assessments, error: assessmentError } = await supabase
+    const { data: assessments } = await supabase
       .from('assessments')
       .select('*');
 
